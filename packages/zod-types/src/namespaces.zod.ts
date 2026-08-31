@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  McpServerAuthTypeEnum,
   McpServerErrorStatusEnum,
   McpServerSchema,
   McpServerStatusEnum,
@@ -300,7 +301,10 @@ export const DatabaseNamespaceServerSchema = z.object({
   args: z.array(z.string()),
   url: z.string().nullable(),
   env: z.record(z.string(), z.string()),
+  auth_type: McpServerAuthTypeEnum,
   bearerToken: z.string().nullable(),
+  basic_username: z.string().nullable(),
+  basic_password: z.string().nullable(),
   headers: z.record(z.string(), z.string()),
   forward_headers: z.record(z.string(), z.string()),
   created_at: z.date(),

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { McpServerTypeEnum } from "./mcp-servers.zod";
+import { McpServerAuthTypeEnum, McpServerTypeEnum } from "./mcp-servers.zod";
 import { OAuthTokensSchema } from "./oauth.zod";
 
 export const IOTypeSchema = z.enum(["overlapped", "pipe", "ignore", "inherit"]);
@@ -19,7 +19,10 @@ export const ServerParametersSchema = z.object({
   status: z.string(),
   error_status: z.string().optional(),
   oauth_tokens: OAuthTokensSchema.nullable().optional(),
+  auth_type: McpServerAuthTypeEnum.nullable().optional(),
   bearerToken: z.string().nullable().optional(),
+  basic_username: z.string().nullable().optional(),
+  basic_password: z.string().nullable().optional(),
   headers: z.record(z.string(), z.string()).nullable().optional(),
   forward_headers: z.record(z.string(), z.string()).optional(),
 });

@@ -52,7 +52,10 @@ export async function getMcpServers(
         env: mcpServersTable.env,
         url: mcpServersTable.url,
         created_at: mcpServersTable.created_at,
+        auth_type: mcpServersTable.auth_type,
         bearerToken: mcpServersTable.bearerToken,
+        basic_username: mcpServersTable.basic_username,
+        basic_password: mcpServersTable.basic_password,
         headers: mcpServersTable.headers,
         forward_headers: mcpServersTable.forward_headers,
         status: namespaceServerMappingsTable.status,
@@ -100,7 +103,10 @@ export async function getMcpServers(
         error_status: server.error_status?.toLowerCase(),
         stderr: "inherit" as IOType,
         oauth_tokens: oauthTokens,
+        auth_type: server.auth_type,
         bearerToken: server.bearerToken,
+        basic_username: server.basic_username,
+        basic_password: server.basic_password,
       };
 
       // Process based on server type

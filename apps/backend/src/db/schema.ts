@@ -1,5 +1,6 @@
 import { OAuthClientInformation } from "@modelcontextprotocol/sdk/shared/auth.js";
 import {
+  McpServerAuthTypeEnum,
   McpServerErrorStatusEnum,
   McpServerStatusEnum,
   McpServerTypeEnum,
@@ -38,6 +39,10 @@ export const mcpServerErrorStatusEnum = pgEnum(
   "mcp_server_error_status",
   toEnumTuple(McpServerErrorStatusEnum.options),
 );
+export const mcpServerAuthTypeEnum = pgEnum(
+  "mcp_server_auth_type",
+  toEnumTuple(McpServerAuthTypeEnum.options),
+);
 export const mcpRequestAuditStatusEnum = pgEnum("mcp_request_audit_status", [
   "SUCCESS",
   "ERROR",
@@ -68,7 +73,18 @@ export const mcpServersTable = pgTable(
     created_at: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // How to authenticate against this server. Defaults to NONE; the
+    // migration that introduced this column backfills BEARER for every row
+    // that already carried a bearer token, so existing servers keep sending
+    // the same Authorization header they always did.
+    auth_type: mcpServerAuthTypeEnum("auth_type")
+      .notNull()
+      .default(McpServerAuthTypeEnum.enum.NONE),
     bearerToken: text("bearer_token"),
+    basic_username: text("basic_username"),
+    // Stored in plain text, exactly like bearer_token above. Encrypting
+    // downstream credentials at rest is a separate, wider change.
+    basic_password: text("basic_password"),
     headers: jsonb("headers")
       .$type<{ [key: string]: string }>()
       .notNull()

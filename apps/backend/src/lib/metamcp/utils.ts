@@ -115,7 +115,10 @@ export async function convertDbServerToParams(
       status: "active", // Default status for non-namespace servers
       stderr: "inherit" as const,
       oauth_tokens: oauthTokens,
+      auth_type: server.auth_type,
       bearerToken: server.bearerToken,
+      basic_username: server.basic_username,
+      basic_password: server.basic_password,
       headers: server.headers || {},
       forward_headers: server.forward_headers || {},
     };

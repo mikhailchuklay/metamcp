@@ -6,6 +6,18 @@ export const McpServerStatusEnum = z.enum(["ACTIVE", "INACTIVE"]);
 export const McpServerErrorStatusEnum = z.enum(["NONE", "ERROR"]);
 
 /**
+ * How MetaMCP authenticates against a downstream SSE / Streamable HTTP
+ * server. Stored explicitly rather than inferred from which credential
+ * fields happen to be populated, so that a server carrying both a bearer
+ * token and Basic credentials is never resolved by guesswork.
+ *
+ * Note that this does not cover upstream OAuth: an OAuth access token is
+ * obtained through a separate authorization flow and, when present, still
+ * takes precedence over whatever is configured here.
+ */
+export const McpServerAuthTypeEnum = z.enum(["NONE", "BEARER", "BASIC"]);
+
+/**
  * RFC 7230 token characters for HTTP header field names.
  * Valid: letters, digits, and !#$%&'*+-.^_`|~
  */
@@ -217,6 +229,12 @@ const formOauthIsBlank = (data: {
   (data.oauth_token_endpoint_auth_method === undefined ||
     data.oauth_token_endpoint_auth_method === "none");
 
+// Only the HTTP-based transports send an Authorization header; STDIO
+// servers talk over stdin/stdout, so the auth section does not apply.
+const isHttpAuthApplicable = (type: z.infer<typeof McpServerTypeEnum>) =>
+  type === McpServerTypeEnum.enum.SSE ||
+  type === McpServerTypeEnum.enum.STREAMABLE_HTTP;
+
 // Define the form schema (includes UI-specific fields)
 export const createServerFormSchema = z
   .object({
@@ -233,7 +251,10 @@ export const createServerFormSchema = z
     command: z.string().optional(),
     args: z.string().optional(),
     url: z.string().optional(),
+    auth_type: McpServerAuthTypeEnum.optional(),
     bearerToken: z.string().optional(),
+    basic_username: z.string().optional(),
+    basic_password: z.string().optional(),
     headers: z.string().optional(),
     forward_headers: ForwardHeadersFormSchema,
     env: z.string().optional(),
@@ -292,7 +313,27 @@ export const createServerFormSchema = z
   .refine((data) => isValidOptionalUrl(data.oauth_token_endpoint), {
     message: "validation:oauthTokenEndpoint.invalid",
     path: ["oauth_token_endpoint"],
-  });
+  })
+  .refine(
+    (data) =>
+      !isHttpAuthApplicable(data.type) ||
+      data.auth_type !== McpServerAuthTypeEnum.enum.BEARER ||
+      !isEmptyString(data.bearerToken),
+    {
+      message: "validation:bearerToken.required",
+      path: ["bearerToken"],
+    },
+  )
+  .refine(
+    (data) =>
+      !isHttpAuthApplicable(data.type) ||
+      data.auth_type !== McpServerAuthTypeEnum.enum.BASIC ||
+      !isEmptyString(data.basic_username),
+    {
+      message: "validation:basicUsername.required",
+      path: ["basic_username"],
+    },
+  );
 
 export type CreateServerFormData = z.infer<typeof createServerFormSchema>;
 
@@ -312,7 +353,10 @@ export const EditServerFormSchema = z
     command: z.string().optional(),
     args: z.string().optional(),
     url: z.string().optional(),
+    auth_type: McpServerAuthTypeEnum.optional(),
     bearerToken: z.string().optional(),
+    basic_username: z.string().optional(),
+    basic_password: z.string().optional(),
     headers: z.string().optional(),
     forward_headers: ForwardHeadersFormSchema,
     env: z.string().optional(),
@@ -371,9 +415,69 @@ export const EditServerFormSchema = z
   .refine((data) => isValidOptionalUrl(data.oauth_token_endpoint), {
     message: "validation:oauthTokenEndpoint.invalid",
     path: ["oauth_token_endpoint"],
-  });
+  })
+  .refine(
+    (data) =>
+      !isHttpAuthApplicable(data.type) ||
+      data.auth_type !== McpServerAuthTypeEnum.enum.BEARER ||
+      !isEmptyString(data.bearerToken),
+    {
+      message: "validation:bearerToken.required",
+      path: ["bearerToken"],
+    },
+  )
+  .refine(
+    (data) =>
+      !isHttpAuthApplicable(data.type) ||
+      data.auth_type !== McpServerAuthTypeEnum.enum.BASIC ||
+      !isEmptyString(data.basic_username),
+    {
+      message: "validation:basicUsername.required",
+      path: ["basic_username"],
+    },
+  );
 
 export type EditServerFormData = z.infer<typeof EditServerFormSchema>;
+
+/**
+ * Resolves the auth type to store for a write whose caller did not send one.
+ *
+ * `auth_type` was added after `bearerToken`, so API clients may still post
+ * credentials without it. Inferring keeps those callers working; the request
+ * schemas reject the one genuinely ambiguous case (both credential sets, no
+ * `auth_type`) instead of guessing.
+ */
+export const deriveMcpServerAuthType = (input: {
+  auth_type?: McpServerAuthType | null;
+  bearerToken?: string | null;
+  basic_username?: string | null;
+}): McpServerAuthType => {
+  if (input.auth_type) {
+    return input.auth_type;
+  }
+  if (!isEmptyString(input.basic_username ?? undefined)) {
+    return McpServerAuthTypeEnum.enum.BASIC;
+  }
+  if (!isEmptyString(input.bearerToken ?? undefined)) {
+    return McpServerAuthTypeEnum.enum.BEARER;
+  }
+  return McpServerAuthTypeEnum.enum.NONE;
+};
+
+/**
+ * Rejects a write that supplies both a bearer token and a Basic username
+ * without saying which one to use. Applied to the create and update request
+ * schemas so the ambiguity surfaces as a validation error rather than a
+ * silent choice.
+ */
+const hasUnambiguousCredentials = (data: {
+  auth_type?: McpServerAuthType;
+  bearerToken?: string;
+  basic_username?: string;
+}) =>
+  !!data.auth_type ||
+  isEmptyString(data.bearerToken) ||
+  isEmptyString(data.basic_username);
 
 export const CreateMcpServerRequestSchema = z
   .object({
@@ -394,7 +498,10 @@ export const CreateMcpServerRequestSchema = z
     args: z.array(z.string()).optional(),
     env: z.record(z.string(), z.string()).optional(),
     url: z.string().optional(),
+    auth_type: McpServerAuthTypeEnum.optional(),
     bearerToken: z.string().optional(),
+    basic_username: z.string().optional(),
+    basic_password: z.string().optional(),
     headers: z.record(z.string(), z.string()).optional(),
     forward_headers: ForwardHeadersRecordSchema,
     user_id: z.string().nullable().optional(),
@@ -423,7 +530,16 @@ export const CreateMcpServerRequestSchema = z
       message:
         "Command is required for stdio servers. URL is required and must be valid for sse and streamable_http server types",
     },
-  );
+  )
+  .refine(hasUnambiguousCredentials, {
+    message:
+      "auth_type is required when both a bearer token and Basic credentials are provided",
+    path: ["auth_type"],
+  })
+  .transform((data) => ({
+    ...data,
+    auth_type: deriveMcpServerAuthType(data),
+  }));
 
 export const McpServerSchema = z.object({
   uuid: z.string(),
@@ -435,7 +551,10 @@ export const McpServerSchema = z.object({
   env: z.record(z.string(), z.string()),
   url: z.string().nullable(),
   created_at: z.string(),
+  auth_type: McpServerAuthTypeEnum,
   bearerToken: z.string().nullable(),
+  basic_username: z.string().nullable(),
+  basic_password: z.string().nullable(),
   headers: z.record(z.string(), z.string()),
   forward_headers: z.record(z.string(), z.string()),
   user_id: z.string().nullable(),
@@ -531,7 +650,11 @@ export const BulkImportMcpServersResponseSchema = z.object({
 
 // MCP Server types
 export type McpServerType = z.infer<typeof McpServerTypeEnum>;
-export type CreateMcpServerRequest = z.infer<
+export type McpServerAuthType = z.infer<typeof McpServerAuthTypeEnum>;
+// z.input, not z.infer: the schema normalises `auth_type` in a transform, so
+// the output type has it required. Callers may still omit it — keeping the
+// request type as the input shape preserves the pre-auth_type contract.
+export type CreateMcpServerRequest = z.input<
   typeof CreateMcpServerRequestSchema
 >;
 export type McpServer = z.infer<typeof McpServerSchema>;
@@ -580,7 +703,10 @@ export const UpdateMcpServerRequestSchema = z
     args: z.array(z.string()).optional(),
     env: z.record(z.string(), z.string()).optional(),
     url: z.string().optional(),
+    auth_type: McpServerAuthTypeEnum.optional(),
     bearerToken: z.string().optional(),
+    basic_username: z.string().optional(),
+    basic_password: z.string().optional(),
     headers: z.record(z.string(), z.string()).optional(),
     forward_headers: ForwardHeadersRecordSchema,
     user_id: z.string().nullable().optional(),
@@ -609,7 +735,16 @@ export const UpdateMcpServerRequestSchema = z
       message:
         "Command is required for stdio servers. URL is required and must be valid for sse and streamable_http server types",
     },
-  );
+  )
+  .refine(hasUnambiguousCredentials, {
+    message:
+      "auth_type is required when both a bearer token and Basic credentials are provided",
+    path: ["auth_type"],
+  })
+  .transform((data) => ({
+    ...data,
+    auth_type: deriveMcpServerAuthType(data),
+  }));
 
 export const UpdateMcpServerResponseSchema = z.object({
   success: z.boolean(),
@@ -626,7 +761,8 @@ export type DeleteMcpServerResponse = z.infer<
   typeof DeleteMcpServerResponseSchema
 >;
 
-export type UpdateMcpServerRequest = z.infer<
+// z.input for the same reason as CreateMcpServerRequest above.
+export type UpdateMcpServerRequest = z.input<
   typeof UpdateMcpServerRequestSchema
 >;
 
@@ -652,7 +788,10 @@ export const McpServerCreateInputSchema = z.object({
   args: z.array(z.string()).optional(),
   env: z.record(z.string(), z.string()).optional(),
   url: z.string().nullable().optional(),
+  auth_type: McpServerAuthTypeEnum.optional(),
   bearerToken: z.string().nullable().optional(),
+  basic_username: z.string().nullable().optional(),
+  basic_password: z.string().nullable().optional(),
   headers: z.record(z.string(), z.string()).optional(),
   forward_headers: ForwardHeadersRecordSchema,
   user_id: z.string().nullable().optional(),
@@ -677,7 +816,10 @@ export const McpServerUpdateInputSchema = z.object({
   args: z.array(z.string()).optional(),
   env: z.record(z.string(), z.string()).optional(),
   url: z.string().nullable().optional(),
+  auth_type: McpServerAuthTypeEnum.optional(),
   bearerToken: z.string().nullable().optional(),
+  basic_username: z.string().nullable().optional(),
+  basic_password: z.string().nullable().optional(),
   headers: z.record(z.string(), z.string()).optional(),
   forward_headers: ForwardHeadersRecordSchema,
   user_id: z.string().nullable().optional(),
@@ -698,7 +840,10 @@ export const DatabaseMcpServerSchema = z.object({
   url: z.string().nullable(),
   error_status: McpServerErrorStatusEnum,
   created_at: z.date(),
+  auth_type: McpServerAuthTypeEnum,
   bearerToken: z.string().nullable(),
+  basic_username: z.string().nullable(),
+  basic_password: z.string().nullable(),
   headers: z.record(z.string(), z.string()),
   forward_headers: z.record(z.string(), z.string()),
   user_id: z.string().nullable(),

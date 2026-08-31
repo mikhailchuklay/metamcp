@@ -1,5 +1,6 @@
 import {
   DatabaseMcpServer,
+  deriveMcpServerAuthType,
   McpServerCreateInput,
   McpServerErrorStatusEnum,
   McpServerUpdateInput,
@@ -69,7 +70,11 @@ export class McpServersRepository {
     try {
       const [createdServer] = await db
         .insert(mcpServersTable)
-        .values(input)
+        // Callers that predate auth_type (and internal callers such as
+        // endpoint auto-provisioning) pass credentials without it; derive it
+        // here so no insert path can silently fall back to the NONE default
+        // and drop an Authorization header the caller expected to be sent.
+        .values({ ...input, auth_type: deriveMcpServerAuthType(input) })
         .returning();
 
       return createdServer;
