@@ -12,6 +12,7 @@ import { tryRefreshUpstreamTokens } from "../oauth-upstream/refresh-on-401";
 import { recoverFromPostAuthRace } from "../oauth-upstream/retry-post-auth";
 import { isUpstreamUnauthorizedError } from "../oauth-upstream/token-exchange";
 import { ProcessManagedStdioTransport } from "../stdio-transport/process-managed-transport";
+import { buildHttpTransportHeaders } from "./auth-headers";
 import { metamcpLogStore } from "./log-store";
 import { serverErrorTracker } from "./server-error-tracker";
 import { resolveEnvVariables } from "./utils";
@@ -85,17 +86,9 @@ export const createMetaMcpClient = (
     // Transform the URL if TRANSFORM_LOCALHOST_TO_DOCKER_INTERNAL is set to "true"
     const transformedUrl = transformDockerUrl(serverParams.url);
 
-    // Build headers: start with custom headers, then add auth header
-    const headers: Record<string, string> = {
-      ...(serverParams.headers || {}),
-    };
-
-    // Check for authentication - prioritize OAuth tokens, fallback to bearerToken
-    const authToken =
-      serverParams.oauth_tokens?.access_token || serverParams.bearerToken;
-    if (authToken) {
-      headers["Authorization"] = `Bearer ${authToken}`;
-    }
+    // Custom headers plus the resolved Authorization header. See
+    // buildHttpTransportHeaders for the precedence rules.
+    const headers = buildHttpTransportHeaders(serverParams);
 
     const hasHeaders = Object.keys(headers).length > 0;
 
@@ -115,17 +108,9 @@ export const createMetaMcpClient = (
     // Transform the URL if TRANSFORM_LOCALHOST_TO_DOCKER_INTERNAL is set to "true"
     const transformedUrl = transformDockerUrl(serverParams.url);
 
-    // Build headers: start with custom headers, then add auth header
-    const headers: Record<string, string> = {
-      ...(serverParams.headers || {}),
-    };
-
-    // Check for authentication - prioritize OAuth tokens, fallback to bearerToken
-    const authToken =
-      serverParams.oauth_tokens?.access_token || serverParams.bearerToken;
-    if (authToken) {
-      headers["Authorization"] = `Bearer ${authToken}`;
-    }
+    // Custom headers plus the resolved Authorization header. See
+    // buildHttpTransportHeaders for the precedence rules.
+    const headers = buildHttpTransportHeaders(serverParams);
 
     const hasHeaders = Object.keys(headers).length > 0;
 
