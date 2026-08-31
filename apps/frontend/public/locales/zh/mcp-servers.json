@@ -19,6 +19,16 @@
   "urlPlaceholder": "https://example.com/sse|mcp",
   "bearerToken": "Bearer 令牌",
   "bearerTokenPlaceholder": "Bearer 令牌",
+  "authType": "身份验证",
+  "authTypes": {
+    "NONE": "无",
+    "BEARER": "Bearer 令牌",
+    "BASIC": "基本认证"
+  },
+  "basicUsername": "用户名",
+  "basicUsernamePlaceholder": "输入用户名",
+  "basicPassword": "密码",
+  "basicPasswordPlaceholder": "输入密码",
   "headers": "自定义请求头",
   "headersPlaceholder": "KEY=value（每行一个）",
   "forwardHeaders": "转发客户端请求头",
@@ -141,6 +151,10 @@
     "noError": "无错误"
   },
   "detail": {
+    "authBasicUsername": "基本认证用户名",
+    "authBasicPassword": "基本认证密码",
+    "hidePassword": "隐藏密码",
+    "showPassword": "显示密码",
     "backToServers": "返回 MCP 服务器",
     "editServer": "编辑服务器",
     "deleteServer": "删除服务器",

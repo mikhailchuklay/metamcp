@@ -20,6 +20,12 @@
     "required": "SSE 및 Streamable HTTP 유형에는 URL이 필요합니다",
     "invalidUrl": "SSE 및 Streamable HTTP 유형에는 유효한 URL을 입력해야 합니다"
   },
+  "bearerToken": {
+    "required": "Bearer 인증을 사용할 때는 Bearer 토큰이 필요합니다"
+  },
+  "basicUsername": {
+    "required": "기본 인증을 사용할 때는 사용자 이름이 필요합니다"
+  },
   "namespaceName": {
     "required": "Namespace 이름을 입력하세요",
     "invalidCharacters": "Namespace 이름은 문자, 숫자, 밑줄, 하이픈만 포함할 수 있습니다"

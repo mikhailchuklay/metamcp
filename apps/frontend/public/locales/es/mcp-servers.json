@@ -19,6 +19,16 @@
   "urlPlaceholder": "https://example.com/sse|mcp",
   "bearerToken": "Bearer Token",
   "bearerTokenPlaceholder": "Ingrese el bearer token",
+  "authType": "Autenticación",
+  "authTypes": {
+    "NONE": "Ninguna",
+    "BEARER": "Token Bearer",
+    "BASIC": "Autenticación básica"
+  },
+  "basicUsername": "Usuario",
+  "basicUsernamePlaceholder": "Introduce el usuario",
+  "basicPassword": "Contraseña",
+  "basicPasswordPlaceholder": "Introduce la contraseña",
   "headers": "Headers Personalizados",
   "headersPlaceholder": "CLAVE=valor (una por línea)",
   "ownership": "Propiedad",
@@ -135,6 +145,10 @@
     "noError": "Sin Error"
   },
   "detail": {
+    "authBasicUsername": "Usuario de autenticación básica",
+    "authBasicPassword": "Contraseña de autenticación básica",
+    "hidePassword": "Ocultar contraseña",
+    "showPassword": "Mostrar contraseña",
     "backToServers": "Volver a MCP Servers",
     "editServer": "Editar Server",
     "deleteServer": "Eliminar Server",

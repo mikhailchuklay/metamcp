@@ -20,6 +20,12 @@
     "required": "A URL é obrigatória para tipos SSE e Streamable HTTP",
     "invalidUrl": "A URL deve ser válida para tipos SSE e Streamable HTTP"
   },
+  "bearerToken": {
+    "required": "O token Bearer é obrigatório ao usar autenticação Bearer"
+  },
+  "basicUsername": {
+    "required": "O usuário é obrigatório ao usar autenticação básica"
+  },
   "namespaceName": {
     "required": "O nome do namespace é obrigatório",
     "invalidCharacters": "O nome do namespace deve conter apenas letras, números, underscores e hifens"

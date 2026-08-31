@@ -4,6 +4,8 @@ import {
   CreateMcpServerRequest,
   CreateServerFormData,
   createServerFormSchema,
+  McpServerAuthType,
+  McpServerAuthTypeEnum,
   McpServerTypeEnum,
 } from "@repo/zod-types";
 import { ChevronDown, Plus, Server } from "lucide-react";
@@ -48,6 +50,9 @@ export default function McpServersPage() {
   const { t } = useTranslations();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const authTypeLabel = (value: McpServerAuthType | undefined) =>
+    t(`mcp-servers:authTypes.${value ?? McpServerAuthTypeEnum.enum.NONE}`);
+
   const form = useForm<CreateServerFormData>({
     resolver: createTranslatedZodResolver(createServerFormSchema, t),
     defaultValues: {
@@ -58,7 +63,10 @@ export default function McpServersPage() {
       args: "",
       env: "",
       url: "",
+      auth_type: McpServerAuthTypeEnum.enum.NONE,
       bearerToken: "",
+      basic_username: "",
+      basic_password: "",
       headers: "",
       forward_headers: "",
       user_id: undefined, // Default to private (current user)
@@ -184,7 +192,10 @@ export default function McpServersPage() {
       args: argsArray,
       env: envObject,
       url: data.url,
+      auth_type: data.auth_type,
       bearerToken: data.bearerToken,
+      basic_username: data.basic_username,
+      basic_password: data.basic_password,
       headers: headersObject,
       forward_headers: forwardHeadersRecord,
       user_id: data.user_id,
@@ -452,24 +463,112 @@ export default function McpServersPage() {
 
                       <FormField
                         control={form.control}
-                        name="bearerToken"
+                        name="auth_type"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>
-                              {t("mcp-servers:bearerToken")}
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder={t(
-                                  "mcp-servers:bearerTokenPlaceholder",
-                                )}
-                              />
-                            </FormControl>
+                            <FormLabel>{t("mcp-servers:authType")}</FormLabel>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-between"
+                                >
+                                  {authTypeLabel(field.value)}
+                                  <ChevronDown className="ml-2 h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[var(--radix-dropdown-menu-trigger-width)]"
+                                align="start"
+                              >
+                                {McpServerAuthTypeEnum.options.map((option) => (
+                                  <DropdownMenuItem
+                                    key={option}
+                                    onClick={() => field.onChange(option)}
+                                  >
+                                    {authTypeLabel(option)}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+
+                      {form.watch("auth_type") ===
+                        McpServerAuthTypeEnum.enum.BEARER && (
+                        <FormField
+                          control={form.control}
+                          name="bearerToken"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                {t("mcp-servers:bearerToken")}
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder={t(
+                                    "mcp-servers:bearerTokenPlaceholder",
+                                  )}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+
+                      {form.watch("auth_type") ===
+                        McpServerAuthTypeEnum.enum.BASIC && (
+                        <>
+                          <FormField
+                            control={form.control}
+                            name="basic_username"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>
+                                  {t("mcp-servers:basicUsername")}
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    autoComplete="off"
+                                    placeholder={t(
+                                      "mcp-servers:basicUsernamePlaceholder",
+                                    )}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="basic_password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>
+                                  {t("mcp-servers:basicPassword")}
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="password"
+                                    autoComplete="new-password"
+                                    placeholder={t(
+                                      "mcp-servers:basicPasswordPlaceholder",
+                                    )}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </>
+                      )}
 
                       <FormField
                         control={form.control}

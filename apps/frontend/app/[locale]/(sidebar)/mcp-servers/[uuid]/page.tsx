@@ -61,6 +61,8 @@ export default function McpServerDetailPage({
   );
   const [bearerTokenRevealed, setBearerTokenRevealed] =
     useState<boolean>(false);
+  const [basicPasswordRevealed, setBasicPasswordRevealed] =
+    useState<boolean>(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
 
@@ -584,6 +586,49 @@ export default function McpServerDetailPage({
                         }
                       >
                         {bearerTokenRevealed ? (
+                          <EyeOff className="h-3 w-3" />
+                        ) : (
+                          <Eye className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {server.basic_username && (
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {t("mcp-servers:detail.authBasicUsername")}:
+                    </span>
+                    <p className="text-sm font-mono bg-muted p-2 rounded break-all">
+                      {server.basic_username}
+                    </p>
+                  </div>
+                )}
+                {server.basic_password && (
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {t("mcp-servers:detail.authBasicPassword")}:
+                    </span>
+                    <div className="flex items-start gap-2 bg-muted p-2 rounded">
+                      <span className="text-sm font-mono text-muted-foreground flex-1 break-all">
+                        {basicPasswordRevealed
+                          ? server.basic_password
+                          : maskSensitiveValue(server.basic_password)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 flex-shrink-0"
+                        onClick={() =>
+                          setBasicPasswordRevealed(!basicPasswordRevealed)
+                        }
+                        title={
+                          basicPasswordRevealed
+                            ? t("mcp-servers:detail.hidePassword")
+                            : t("mcp-servers:detail.showPassword")
+                        }
+                      >
+                        {basicPasswordRevealed ? (
                           <EyeOff className="h-3 w-3" />
                         ) : (
                           <Eye className="h-3 w-3" />

@@ -4,6 +4,8 @@ import {
   EditServerFormData,
   EditServerFormSchema,
   McpServer,
+  McpServerAuthType,
+  McpServerAuthTypeEnum,
   McpServerTypeEnum,
   UpdateMcpServerRequest,
 } from "@repo/zod-types";
@@ -147,6 +149,9 @@ export function EditMcpServer({
     },
   });
 
+  const authTypeLabel = (value: McpServerAuthType | undefined) =>
+    t(`mcp-servers:authTypes.${value ?? McpServerAuthTypeEnum.enum.NONE}`);
+
   const editForm = useForm<EditServerFormData>({
     resolver: createTranslatedZodResolver(EditServerFormSchema, t),
     defaultValues: {
@@ -156,7 +161,10 @@ export function EditMcpServer({
       command: "",
       args: "",
       url: "",
+      auth_type: McpServerAuthTypeEnum.enum.NONE,
       bearerToken: "",
+      basic_username: "",
+      basic_password: "",
       headers: "",
       forward_headers: "",
       env: "",
@@ -188,7 +196,10 @@ export function EditMcpServer({
           // Clear URL, bearer token, headers, forward headers, and pre-registered
           // OAuth fields when switching to stdio
           editForm.setValue("url", "");
+          editForm.setValue("auth_type", McpServerAuthTypeEnum.enum.NONE);
           editForm.setValue("bearerToken", "");
+          editForm.setValue("basic_username", "");
+          editForm.setValue("basic_password", "");
           editForm.setValue("headers", "");
           editForm.setValue("forward_headers", "");
           editForm.setValue("oauth_client_id", "");
@@ -236,7 +247,10 @@ export function EditMcpServer({
         command: server.command || "",
         args: server.args.join(" "),
         url: server.url || "",
+        auth_type: server.auth_type,
         bearerToken: server.bearerToken || "",
+        basic_username: server.basic_username || "",
+        basic_password: server.basic_password || "",
         headers: Object.entries(server.headers)
           .map(([key, value]) => `${key}=${value}`)
           .join("\n"),
@@ -374,7 +388,10 @@ export function EditMcpServer({
         args: argsArray,
         env: envObject,
         url: data.url,
+        auth_type: data.auth_type,
         bearerToken: data.bearerToken,
+        basic_username: data.basic_username,
+        basic_password: data.basic_password,
         headers: headersObject,
         forward_headers: forwardHeadersRecord,
         user_id: data.user_id,
@@ -594,19 +611,96 @@ export function EditMcpServer({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="edit-bearerToken"
-                  className="text-sm font-medium"
-                >
-                  {t("mcp-servers:bearerToken")}
+                <label className="text-sm font-medium">
+                  {t("mcp-servers:authType")}
                 </label>
-                <Input
-                  id="edit-bearerToken"
-                  {...editForm.register("bearerToken")}
-                  placeholder={t("mcp-servers:bearerTokenPlaceholder")}
-                  type="password"
-                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                      type="button"
+                    >
+                      {authTypeLabel(editForm.watch("auth_type"))}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[var(--radix-dropdown-menu-trigger-width)]">
+                    {McpServerAuthTypeEnum.options.map((option) => (
+                      <DropdownMenuItem
+                        key={option}
+                        onClick={() => editForm.setValue("auth_type", option)}
+                      >
+                        {authTypeLabel(option)}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
+
+              {editForm.watch("auth_type") ===
+                McpServerAuthTypeEnum.enum.BEARER && (
+                <div className="flex flex-col gap-2">
+                  <label
+                    htmlFor="edit-bearerToken"
+                    className="text-sm font-medium"
+                  >
+                    {t("mcp-servers:bearerToken")}
+                  </label>
+                  <Input
+                    id="edit-bearerToken"
+                    {...editForm.register("bearerToken")}
+                    placeholder={t("mcp-servers:bearerTokenPlaceholder")}
+                    type="password"
+                  />
+                  {editForm.formState.errors.bearerToken && (
+                    <p className="text-sm text-red-500">
+                      {editForm.formState.errors.bearerToken.message}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {editForm.watch("auth_type") ===
+                McpServerAuthTypeEnum.enum.BASIC && (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="edit-basicUsername"
+                      className="text-sm font-medium"
+                    >
+                      {t("mcp-servers:basicUsername")}
+                    </label>
+                    <Input
+                      id="edit-basicUsername"
+                      {...editForm.register("basic_username")}
+                      placeholder={t("mcp-servers:basicUsernamePlaceholder")}
+                      autoComplete="off"
+                    />
+                    {editForm.formState.errors.basic_username && (
+                      <p className="text-sm text-red-500">
+                        {editForm.formState.errors.basic_username.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="edit-basicPassword"
+                      className="text-sm font-medium"
+                    >
+                      {t("mcp-servers:basicPassword")}
+                    </label>
+                    <Input
+                      id="edit-basicPassword"
+                      {...editForm.register("basic_password")}
+                      placeholder={t("mcp-servers:basicPasswordPlaceholder")}
+                      type="password"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="flex flex-col gap-2">
                 <label htmlFor="edit-headers" className="text-sm font-medium">

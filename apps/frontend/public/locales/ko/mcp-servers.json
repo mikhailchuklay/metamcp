@@ -19,6 +19,16 @@
   "urlPlaceholder": "https://example.com/sse|mcp",
   "bearerToken": "Bearer Token",
   "bearerTokenPlaceholder": "Bearer token 입력",
+  "authType": "인증",
+  "authTypes": {
+    "NONE": "없음",
+    "BEARER": "Bearer 토큰",
+    "BASIC": "기본 인증"
+  },
+  "basicUsername": "사용자 이름",
+  "basicUsernamePlaceholder": "사용자 이름 입력",
+  "basicPassword": "비밀번호",
+  "basicPasswordPlaceholder": "비밀번호 입력",
   "headers": "사용자 정의 Header",
   "headersPlaceholder": "KEY=value (한 줄에 하나씩)",
   "forwardHeaders": "클라이언트 Header 전달",
@@ -141,6 +151,10 @@
     "noError": "오류 없음"
   },
   "detail": {
+    "authBasicUsername": "기본 인증 사용자 이름",
+    "authBasicPassword": "기본 인증 비밀번호",
+    "hidePassword": "비밀번호 숨기기",
+    "showPassword": "비밀번호 표시",
     "backToServers": "MCP Server로 돌아가기",
     "editServer": "Server 편집",
     "deleteServer": "Server 삭제",

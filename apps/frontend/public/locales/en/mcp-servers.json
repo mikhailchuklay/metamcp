@@ -19,6 +19,16 @@
   "urlPlaceholder": "https://example.com/sse|mcp",
   "bearerToken": "Bearer Token",
   "bearerTokenPlaceholder": "Enter bearer token",
+  "authType": "Authentication",
+  "authTypes": {
+    "NONE": "None",
+    "BEARER": "Bearer Token",
+    "BASIC": "Basic Auth"
+  },
+  "basicUsername": "Username",
+  "basicUsernamePlaceholder": "Enter username",
+  "basicPassword": "Password",
+  "basicPasswordPlaceholder": "Enter password",
   "headers": "Custom Headers",
   "headersPlaceholder": "KEY=value (one per line)",
   "forwardHeaders": "Forward Client Headers",
@@ -156,6 +166,10 @@
     "noError": "No Error"
   },
   "detail": {
+    "authBasicUsername": "Basic Auth Username",
+    "authBasicPassword": "Basic Auth Password",
+    "hidePassword": "Hide password",
+    "showPassword": "Show password",
     "backToServers": "Back to MCP Servers",
     "editServer": "Edit Server",
     "deleteServer": "Delete Server",

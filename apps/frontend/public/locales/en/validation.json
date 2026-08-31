@@ -20,6 +20,12 @@
     "required": "URL is required for SSE and Streamable HTTP types",
     "invalidUrl": "URL must be valid for SSE and Streamable HTTP types"
   },
+  "bearerToken": {
+    "required": "Bearer token is required when using bearer authentication"
+  },
+  "basicUsername": {
+    "required": "Username is required when using basic authentication"
+  },
   "oauthClientId": {
     "required": "Client ID is required when any pre-registered OAuth field is set"
   },
