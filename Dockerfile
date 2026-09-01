@@ -48,9 +48,11 @@ COPY . .
 # Build all packages and apps
 RUN pnpm build
 
-RUN sed -i -e "s/30000/600000/" \
-    "node_modules/.pnpm/next@15.5.12_react-dom@19.1.2_react@19.1.2__react@19.1.2/node_modules/next/dist/server/lib/router-utils/proxy-request.js" \
-    "node_modules/.pnpm/next@15.5.12_react-dom@19.1.2_react@19.1.2__react@19.1.2/node_modules/next/dist/esm/server/lib/router-utils/proxy-request.js"
+RUN set -e; \
+    files=$(find node_modules/.pnpm -path "*next@*/node_modules/next/dist/*server/lib/router-utils/proxy-request.js"); \
+    [ -n "$files" ] || { echo "proxy-request.js not found"; exit 1; }; \
+    echo "$files"; \
+    echo "$files" | xargs sed -i -e "s/30000/600000/"
 
 # Production runner stage
 FROM base AS runner
@@ -87,10 +89,14 @@ COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
 COPY --from=builder --chown=nextjs:nodejs /app/pnpm-workspace.yaml ./
 
 # Install production dependencies only
-RUN pnpm install --prod
+# pnpm refuses to recreate the copied node_modules without a TTY otherwise.
+ENV CI=true
+# drizzle-kit is needed at runtime for migrations, but ships as a
+# devDependency, so the prod install below would prune it.
+RUN node -e "const fs=require('fs');const p='apps/backend/package.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));delete (j.devDependencies||{})['drizzle-kit'];j.dependencies['drizzle-kit']='0.31.1';fs.writeFileSync(p,JSON.stringify(j,null,2));"
+RUN pnpm install --prod --no-frozen-lockfile
 
 # Install drizzle-kit locally in backend for migrations
-RUN cd apps/backend && pnpm add drizzle-kit@0.31.1
 
 # Copy startup script
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
